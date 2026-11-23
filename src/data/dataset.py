@@ -36,7 +36,7 @@ class ChipDataset(torch.utils.data.Dataset):
         image = Image.open(img_path).convert('RGB')
         image_transformed = self.transform(image)
 
-        target = torch.tensor(target, dtype=torch.float32)
+        target = torch.tensor(target, dtype=torch.long)
 
         return (image_transformed, target)
 
