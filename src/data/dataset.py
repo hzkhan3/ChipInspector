@@ -4,6 +4,12 @@ import torch
 from pathlib import Path
 
 class ChipDataset(torch.utils.data.Dataset):
+    '''
+    Dataset class that is inputted into the DataLoader
+    1. Stores image paths, label paths, and transformation pipeline
+    2. Stores length of dataset
+    3. Allows you to get item that returns a transformed image and the corresponding transformed label
+    '''
     def __init__(self, image_paths, labels, transform=None):
         assert len(image_paths) == len(labels), "Mismatched lists"
         
@@ -37,6 +43,9 @@ class ChipDataset(torch.utils.data.Dataset):
 from pathlib import Path
 
 def get_image_paths_and_labels():
+    '''
+    Helper function that uses hardcoded directory for the dataset to return the full image paths list and the label paths list
+    '''
     roots = [
         Path("~/ChipInspector/data/raw/real/DatasetA-Real").expanduser(),
         Path("~/ChipInspector/data/raw/real/DatasetB-Real").expanduser(),
