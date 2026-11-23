@@ -1,0 +1,68 @@
+from PIL import Image
+import torchvision
+import torch
+from pathlib import Path
+
+class ChipDataset(torch.utils.data.Dataset):
+    def __init__(self, image_paths, labels, transform=None):
+        assert len(image_paths) == len(labels), "Mismatched lists"
+        
+        self.image_paths = image_paths
+        self.labels = labels
+
+        if transform is None:
+            self.transform = torchvision.transforms.ToTensor()
+        else:
+            self.transform = transform
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, index):
+        img_path = self.image_paths[index]
+        label_path = self.labels[index]
+
+        if label_path is None:
+            target = 0
+        else:
+            target = 1
+
+        image = Image.open(img_path).convert('RGB')
+        image_transformed = self.transform(image)
+
+        target = torch.tensor(target, dtype=torch.float32)
+
+        return (image_transformed, target)
+
+from pathlib import Path
+
+def get_image_paths_and_labels():
+    roots = [
+        Path("~/ChipInspector/data/raw/real/DatasetA-Real").expanduser(),
+        Path("~/ChipInspector/data/raw/real/DatasetB-Real").expanduser(),
+    ]
+
+    img_exts = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+    all_images = []
+    all_labels = []
+
+    for root in roots:
+        # Defective images + matching XML labels
+        img_dir_defect = root / "defective" / "image"
+        label_dir_defect = root / "defective" / "label"
+
+        label_map = {p.stem: p for p in label_dir_defect.glob("*.xml")}
+        img_files_defect = [p for p in img_dir_defect.iterdir() if p.suffix.lower() in img_exts]
+        label_files_defect = [label_map[p.stem] for p in img_files_defect]
+
+        # Nondefective images + None labels
+        img_dir_nondefect = root / "nondefective"
+        img_files_nondefect = [p for p in img_dir_nondefect.iterdir() if p.suffix.lower() in img_exts]
+        label_files_nondefect = [None] * len(img_files_nondefect)
+
+        # Combine in matching order
+        all_images.extend(img_files_defect + img_files_nondefect)
+        all_labels.extend(label_files_defect + label_files_nondefect)
+
+    return all_images, all_labels
+
