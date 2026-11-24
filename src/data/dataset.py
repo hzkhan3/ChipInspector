@@ -1,4 +1,5 @@
 from PIL import Image
+import pandas as pd
 import torchvision
 import torch
 from pathlib import Path
@@ -74,4 +75,13 @@ def get_image_paths_and_labels():
         all_labels.extend(label_files_defect + label_files_nondefect)
 
     return all_images, all_labels
+
+def dataset_from_csv(csv_path, transform=None):
+    '''
+    Builds a ChipDataset from a split CSV made by scripts/split_dataset.py
+    (empty label_path means nondefective)
+    '''
+    df = pd.read_csv(csv_path, keep_default_na=False)
+    labels = [p if p else None for p in df["label_path"]]
+    return ChipDataset(df["image_path"].tolist(), labels, transform)
 
