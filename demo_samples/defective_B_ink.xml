@@ -1,0 +1,26 @@
+<annotation verified="yes">
+	<folder>image</folder>
+	<filename>58fdfbd3858ba5d617bf621d231cd06f.jpg</filename>
+	<path>/Users/yangfan/Desktop/0017575AFC/defective/image/58fdfbd3858ba5d617bf621d231cd06f.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>258</width>
+		<height>270</height>
+		<depth>1</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>DIE_INK</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>182</xmin>
+			<ymin>87</ymin>
+			<xmax>194</xmax>
+			<ymax>159</ymax>
+		</bndbox>
+	</object>
+</annotation>

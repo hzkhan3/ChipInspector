@@ -1,0 +1,26 @@
+<annotation verified="yes">
+	<folder>image</folder>
+	<filename>43287f2694ba20f797dfc1686527cc8a.jpg</filename>
+	<path>/Users/yangfan/Desktop/0017575AFC/defective/image/43287f2694ba20f797dfc1686527cc8a.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>258</width>
+		<height>270</height>
+		<depth>1</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>DIE_BROKEN</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>181</xmin>
+			<ymin>140</ymin>
+			<xmax>192</xmax>
+			<ymax>190</ymax>
+		</bndbox>
+	</object>
+</annotation>

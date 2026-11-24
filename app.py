@@ -1,17 +1,18 @@
 '''
 Minimal local web UI for the demo - runs fully offline
-Run: python app.py   then open http://127.0.0.1:5000
+Run: python app.py   then open http://127.0.0.1:8000
 '''
 import base64
-import io
 import json
 import time
 from pathlib import Path
 
+import cv2
 import yaml
 from flask import Flask, request, render_template_string, send_from_directory
 from PIL import Image
 
+from src.inspection.pipeline import analyze
 from src.models.inference import Predictor
 
 cfg = yaml.safe_load(open("config/config.yaml"))
@@ -23,15 +24,14 @@ metrics = json.load(open(METRICS_PATH)) if METRICS_PATH.exists() else None
 
 app = Flask(__name__)
 
-def to_data_url(image):
-    '''Encode a PIL image so it can be shown directly in the page'''
-    buf = io.BytesIO()
-    image.save(buf, format="JPEG")
-    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+def to_data_url(image_bgr):
+    '''Encode an OpenCV image so it can be shown directly in the page'''
+    ok, buf = cv2.imencode(".jpg", image_bgr)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.tobytes()).decode()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    image, name = None, None
+    image, name, label_path = None, None, None
 
     if request.method == "POST" and request.files.get("file"):
         file = request.files["file"]
@@ -39,17 +39,19 @@ def index():
     elif request.args.get("sample"):
         name = Path(request.args["sample"]).name  # .name stops paths like ../../secret
         image = Image.open(SAMPLES_DIR / name).convert("RGB")
+        xml = (SAMPLES_DIR / name).with_suffix(".xml")  # demo defects ship with their label file
+        label_path = xml if xml.exists() else None
 
-    result, ms = None, None
+    result, annotated, ms = None, None, None
     if image:
         start = time.perf_counter()
-        result = predictor.predict(image)
+        result, annotated = analyze(predictor, image, label_path)
         ms = (time.perf_counter() - start) * 1000
 
     samples = sorted(p.name for p in SAMPLES_DIR.glob("*.jpg"))
     return render_template_string(
         PAGE, result=result, ms=ms, name=name, samples=samples, metrics=metrics,
-        image=to_data_url(image) if image else None, threshold=predictor.threshold,
+        image=to_data_url(annotated) if image else None, threshold=predictor.threshold,
     )
 
 @app.route("/samples/<name>")
@@ -69,9 +71,10 @@ PAGE = """
   .sub { color: #667085; margin: 4px 0 24px; }
   .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px #0001; margin-bottom: 20px; }
   .result { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; }
-  .result img { width: 320px; max-width: 100%; border-radius: 8px; border: 6px solid; }
-  .defective { color: #d92d20; border-color: #d92d20; }
-  .nondefective { color: #079455; border-color: #079455; }
+  .result img { width: 380px; max-width: 100%; border-radius: 8px; }
+  .defective { color: #d92d20; }
+  .nondefective { color: #079455; }
+  .key { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 4px; }
   .verdict { font-size: 34px; font-weight: 700; letter-spacing: 1px; }
   .bar { height: 10px; background: #eaecf0; border-radius: 5px; width: 280px; overflow: hidden; margin: 6px 0 16px; }
   .bar div { height: 100%; background: currentColor; }
@@ -100,7 +103,13 @@ PAGE = """
       <div class="muted">Confidence {{ "%.1f"|format(result.confidence * 100) }}%</div>
       <div class="bar"><div style="width: {{ result.confidence * 100 }}%"></div></div>
       <div class="muted">Defect probability: {{ "%.3f"|format(result.defect_probability) }} (threshold {{ threshold }})</div>
-      <div class="muted">Inference time: {{ "%.0f"|format(ms) }} ms</div>
+      <div class="muted">Processing time: {{ "%.0f"|format(ms) }} ms</div>
+      <p class="muted">
+        <span class="key" style="background:#00a0e6"></span>Die region the model sees (OpenCV crop)<br>
+        {% if result.labelled_defects %}
+        <span class="key" style="background:#ffd700"></span>Hand-labelled defect: {{ result.labelled_defects|join(", ") }}
+        {% endif %}
+      </p>
     </div>
   </div>
   {% endif %}
@@ -136,4 +145,4 @@ PAGE = """
 """
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(port=8000, debug=False)  # not 5000: macOS AirPlay uses that port
