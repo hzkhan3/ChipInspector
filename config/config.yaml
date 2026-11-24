@@ -12,4 +12,4 @@ train:
 
 model:
   path: models/best_model.pt
-  threshold: 0.3   # defect probability above this -> "defective" (tuned on val set to favour recall)
+  threshold: 0.2   # defect probability above this -> "defective" (tuned on val set to favour recall)
