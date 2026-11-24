@@ -1,0 +1,15 @@
+data:
+  splits_dir: data/splits
+  val_size: 0.15
+  test_size: 0.15
+  seed: 42
+
+train:
+  image_size: 224
+  batch_size: 32
+  epochs: 10
+  lr: 0.0001
+
+model:
+  path: models/best_model.pt
+  threshold: 0.3   # defect probability above this -> "defective" (tuned on val set to favour recall)
