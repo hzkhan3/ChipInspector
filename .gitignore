@@ -1,6 +1,13 @@
 # Dataset
 data/
 
+# Trained models and generated outputs
+models/*.pt
+outputs/
+
+# Personal notes
+INTERVIEW_NOTES.md
+
 !src/data/
 
 # Byte-compiled / optimized / DLL files
