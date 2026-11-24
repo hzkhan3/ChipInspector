@@ -1,21 +1,36 @@
+import cv2
+import numpy as np
 import matplotlib
 matplotlib.use("Agg")  # save to file, no window
 import matplotlib.pyplot as plt
-from PIL import ImageDraw
 
-def annotate_image(image, result):
-    '''
-    Returns a copy of the image with a coloured border and the prediction written on it
-    '''
-    image = image.convert("RGB").copy()
-    draw = ImageDraw.Draw(image)
-    color = (220, 40, 40) if result["label"] == "defective" else (40, 170, 70)
+# OpenCV colours are BGR, not RGB
+RED, GREEN, YELLOW, BLUE, WHITE = (40, 40, 220), (70, 170, 40), (0, 215, 255), (230, 160, 0), (255, 255, 255)
+FONT = cv2.FONT_HERSHEY_SIMPLEX
 
-    w, h = image.size
-    draw.rectangle([0, 0, w - 1, h - 1], outline=color, width=max(3, w // 60))
-    draw.rectangle([0, 0, w, 18], fill=color)
-    draw.text((5, 3), f"{result['label'].upper()}  {result['confidence']:.0%}", fill="white")
-    return image
+def annotate_image(image, result, die_box=None, label_boxes=None):
+    '''
+    Draws the prediction with OpenCV and returns a BGR numpy array (OpenCV's image format)
+    - die_box: region the model actually sees after the die crop (blue)
+    - label_boxes: hand-labelled defects from the XML file (yellow)
+    '''
+    img = cv2.cvtColor(np.array(image.convert("RGB")), cv2.COLOR_RGB2BGR)
+    h, w = img.shape[:2]
+
+    if die_box:
+        cv2.rectangle(img, die_box[:2], die_box[2:], BLUE, 1)
+
+    for name, (x0, y0, x1, y1) in label_boxes or []:
+        cv2.rectangle(img, (x0, y0), (x1, y1), YELLOW, 2)
+        cv2.putText(img, name.replace("DIE_", ""), (x0, max(34, y0 - 4)), FONT, 0.4, YELLOW, 1, cv2.LINE_AA)
+
+    # Coloured border + banner with the verdict
+    color = RED if result["label"] == "defective" else GREEN
+    cv2.rectangle(img, (0, 0), (w - 1, h - 1), color, max(3, w // 60))
+    cv2.rectangle(img, (0, 0), (w, 22), color, -1)  # -1 = filled
+    text = f"{result['label'].upper()} {result['confidence']:.0%}"
+    cv2.putText(img, text, (6, 16), FONT, 0.5, WHITE, 1, cv2.LINE_AA)
+    return img
 
 def plot_confusion_matrix(cm, filepath):
     labels = ["nondefective", "defective"]

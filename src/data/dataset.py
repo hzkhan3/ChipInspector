@@ -1,4 +1,5 @@
 from PIL import Image
+import xml.etree.ElementTree as ET
 import pandas as pd
 import torchvision
 import torch
@@ -75,6 +76,18 @@ def get_image_paths_and_labels():
         all_labels.extend(label_files_defect + label_files_nondefect)
 
     return all_images, all_labels
+
+def read_label_boxes(label_path):
+    '''
+    Reads the hand-labelled defect boxes from a Pascal VOC XML file
+    Returns a list of (defect_name, (xmin, ymin, xmax, ymax))
+    '''
+    boxes = []
+    for obj in ET.parse(label_path).getroot().iter("object"):
+        b = obj.find("bndbox")
+        coords = tuple(int(float(b.find(k).text)) for k in ("xmin", "ymin", "xmax", "ymax"))
+        boxes.append((obj.find("name").text, coords))
+    return boxes
 
 def dataset_from_csv(csv_path, transform=None):
     '''
