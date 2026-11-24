@@ -1,15 +1,16 @@
 # ChipInspector
 
 Binary classifier for chip die images (defective vs. non-defective) using a fine-tuned ResNet18.
+Each image is first cropped to the die with OpenCV (threshold + morphology + contours).
 
 ## Run the demo (offline)
 
 ```bash
 source .venv/bin/activate
-python app.py          # open http://127.0.0.1:5000
+python app.py          # open http://127.0.0.1:8000
 ```
 
-Click a sample in `demo_samples/` or upload any chip image.
+Click a sample in `demo_samples/` or upload any chip image. Blue shows the die crop the model sees; yellow shows hand-labelled defect boxes (demo defects only).
 
 ## Full pipeline
 
@@ -28,6 +29,6 @@ Settings live in `config/config.yaml`.
 
 | Accuracy | Recall | Precision | F1 |
 |---|---|---|---|
-| 93.0% | 88.7% | 91.2% | 0.899 |
+| 92.8% | 90.3% | 89.4% | 0.898 |
 
-The decision threshold (0.3) was tuned on the validation set to favour recall, since a missed defect costs more than a false alarm.
+The decision threshold (0.2) was tuned on the validation set to favour recall, since a missed defect costs more than a false alarm.
