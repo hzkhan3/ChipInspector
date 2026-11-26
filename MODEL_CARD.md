@@ -10,7 +10,7 @@ Binary classifier that flags semiconductor die images as **defective** or **non-
 | Input | Grayscale/RGB image → OpenCV die crop → 224×224 → ImageNet normalization |
 | Output | P(defective), the softmax of class 1. Label = defective if P ≥ **0.32** |
 | Training | Adam, lr 1e-4, batch 32, 10 epochs, cross-entropy. Augmentation: rotation ±5°, brightness/contrast ±15% |
-| Checkpoint | Lowest validation loss: epoch 7 of 10 (val loss 0.195, val accuracy 91.5% at argmax) |
+| Checkpoint | Lowest validation loss: epoch 7 of 10 (val loss 0.195, val accuracy 91.5% at argmax). [Training curves](assets/training_curves.png) |
 | Weights | [v1.1 release](https://github.com/hzkhan3/ChipInspector/releases/tag/v1.1), 43 MB, sha256 `c05d3a1c…8bf7f08` (full hash in `config/config.yaml`) |
 
 ## Intended use
@@ -55,4 +55,4 @@ v1.0 (same architecture, OS-dependent split, threshold 0.2) scored 92.8% accurac
 - **No location or defect type.** The yellow boxes in the demo are hand labels, not predictions.
 - **Grad-CAM is coarse** (7×7). Its peak lands within half a cell of the labelled defect on 87.2% of Dataset A defects and 79.7% of Dataset B's, but on only 11.1% of missed defects (`scripts/gradcam_check.py`). Treat it as a rough explanation, not a localizer.
 - **Crop fallback:** if no die is found (e.g. `NO_DIE` images), the full image is classified.
-- **Training isn't bit-for-bit reproducible:** the split and seed are fixed, but GPU (MPS/CUDA) kernels can vary slightly between runs and machines.
+- **Reproducibility:** the split and seed are fixed. On the same Mac (MPS), a re-run reproduced epoch 1 to four decimal places; on other machines or GPUs, results may still differ slightly.

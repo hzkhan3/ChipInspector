@@ -114,6 +114,10 @@ image ─► OpenCV die crop ─► resize 224 / normalize ─► ResNet18 ─�
 2. **Classifier** (`src/models/classifier.py`): ImageNet-pretrained ResNet18 with a 2-class head, fine-tuned for 10 epochs. The checkpoint with the lowest validation loss is kept.
 3. **Inspection** (`src/inspection/pipeline.py`): predicts, then draws the verdict, die box and any labelled defect boxes with OpenCV. The CLI and the web app share this code.
 
+<img src="assets/training_curves.png" width="560" alt="v1.1 training curves: train loss falls steadily, validation loss is noisy with spikes at epochs 5 and 9; epoch 7 is kept">
+
+Validation loss is noisy (spikes at epochs 5 and 9) while training loss keeps falling, so keeping the lowest-validation-loss checkpoint (epoch 7 for v1.1) matters.
+
 ## Reproduce from scratch
 
 ### Get the data
@@ -146,6 +150,7 @@ python -m scripts.inspect_image img.jpg      # classify one image -> outputs/ann
 ```
 
 All settings (split sizes, seed, image size, learning rate, threshold) live in `config/config.yaml`.
+Each training run also writes a log to `outputs/runs/<timestamp>/`: the config, the git commit, per-epoch losses and accuracies, the checkpoint's sha256 and the curves above.
 
 ## Development
 

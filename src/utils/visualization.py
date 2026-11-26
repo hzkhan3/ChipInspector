@@ -47,6 +47,21 @@ def overlay_heatmap(image, heatmap, die_box, label_boxes=None):
         cv2.rectangle(img, (bx0, by0), (bx1, by1), YELLOW, 2)
     return img
 
+def plot_training_curves(history, best_epoch, filepath):
+    '''Train vs val loss and accuracy per epoch; the dashed line marks the checkpoint that was kept'''
+    epochs = [h["epoch"] for h in history]
+    fig, axes = plt.subplots(1, 2, figsize=(8, 3.2))
+    for ax, metric in zip(axes, ["loss", "acc"]):
+        ax.plot(epochs, [h[f"train_{metric}"] for h in history], "o-", label="train")
+        ax.plot(epochs, [h[f"val_{metric}"] for h in history], "o-", label="val")
+        ax.axvline(best_epoch, color="gray", linestyle="--", linewidth=1)
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel("Loss" if metric == "loss" else "Accuracy")
+    axes[0].legend()
+    fig.tight_layout()
+    fig.savefig(filepath)
+    plt.close(fig)
+
 def plot_cost_curves(thresholds, curves, chosen, filepath):
     '''curves: {cost ratio: total cost at each threshold} on the validation set, chosen: {cost ratio: threshold}'''
     fig, ax = plt.subplots(figsize=(5, 4))
