@@ -16,7 +16,20 @@ A small Flask app runs the whole pipeline offline.
 |---|---|---|---|
 | 92.8% | 90.3% | 89.4% | 0.898 |
 
-The decision threshold (0.2) was tuned on the validation set to favour recall, since a missed defect costs more than a false alarm.
+### Choosing the threshold
+
+The model outputs P(defective). The threshold that turns this into a verdict depends on what a mistake costs, so `scripts/tune_threshold.py` picks it on the **validation set** by minimising `ratio × missed defects + false alarms` for several cost ratios. The test set is only used to report the result.
+
+| A missed defect costs | Threshold | Test misses | Test false alarms | Test recall | Test precision |
+|---|---|---|---|---|---|
+| 1–5 false alarms | **0.20** (used) | 18 | 20 | 90.3% | 89.4% |
+| 10 false alarms | 0.14 | 15 | 45 | 91.9% | 79.2% |
+| 20 false alarms | 0.09 | 8 | 96 | 95.7% | 65.0% |
+| 50 false alarms | 0.07 | 2 | 127 | 98.9% | 59.2% |
+
+<img src="assets/cost_curves.png" width="380" alt="Validation cost versus threshold for each cost ratio, with the chosen threshold marked">
+
+0.2 is cost-optimal as long as a miss costs up to about 5 false alarms. Catching more defects quickly gets expensive: going from 18 to 8 misses costs 76 more false alarms. That's another sign the remaining misses (mostly Dataset B's tiny defects) need a better model rather than a lower threshold.
 Validation recall was 95.7%, and test recall came in lower at 90.3%. That's expected: a threshold tuned on one set looks slightly better there than on unseen data.
 With 527 test images, the 95% confidence interval on accuracy is about ±2.2%.
 
@@ -52,7 +65,7 @@ To check that the heatmaps are meaningful, `scripts/gradcam_check.py` plays the 
 Grad-CAM on ResNet18 is a 7×7 grid, so one cell covers ~25 px of the die. That's why the tolerance column matters, and why Dataset B's 5–9 px slivers are rarely hit exactly.
 The last row is the most telling: when the model misses a defect, it wasn't looking at it. That supports the error analysis above: the classifier doesn't localize small defects, and a detector would.
 
-Reproduce these numbers with `python -m scripts.evaluate && python -m scripts.error_analysis && python -m scripts.gradcam_check`. Intended use and limitations are in the [model card](MODEL_CARD.md).
+Reproduce these numbers with `python -m scripts.evaluate && python -m scripts.error_analysis && python -m scripts.gradcam_check && python -m scripts.tune_threshold`. Intended use and limitations are in the [model card](MODEL_CARD.md).
 
 ## Quick start: run the demo
 
@@ -125,6 +138,7 @@ python -m scripts.train                      # fine-tune ResNet18 -> models/best
 python -m scripts.evaluate                   # test metrics -> assets/test_metrics.json, predictions -> outputs/
 python -m scripts.error_analysis             # per-dataset metrics, missed defects, PR curve
 python -m scripts.gradcam_check              # does the Grad-CAM peak land on the labelled defect?
+python -m scripts.tune_threshold             # threshold per cost ratio, chosen on validation
 python -m scripts.inspect_image img.jpg      # classify one image -> outputs/annotated/ (+ _gradcam.jpg) + JSON report
 ```
 
@@ -145,7 +159,7 @@ CI runs lint and tests on Python 3.10 and 3.12 for every push and pull request.
 ```
 app.py                 Flask demo + JSON API (offline)
 config/config.yaml     all settings
-scripts/               entry points: explore, split, train, evaluate, error_analysis, gradcam_check, inspect_image, download_model
+scripts/               entry points: explore, split, train, evaluate, error_analysis, gradcam_check, tune_threshold, inspect_image, download_model
 src/data/              dataset, label parsing, OpenCV die crop + transforms
 src/models/            ResNet18 classifier, training loop, Predictor, Grad-CAM
 src/inspection/        end-to-end analyze/inspect + JSON reports

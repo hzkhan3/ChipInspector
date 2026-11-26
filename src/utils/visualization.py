@@ -47,6 +47,20 @@ def overlay_heatmap(image, heatmap, die_box, label_boxes=None):
         cv2.rectangle(img, (bx0, by0), (bx1, by1), YELLOW, 2)
     return img
 
+def plot_cost_curves(thresholds, curves, chosen, filepath):
+    '''curves: {cost ratio: total cost at each threshold} on the validation set, chosen: {cost ratio: threshold}'''
+    fig, ax = plt.subplots(figsize=(5, 4))
+    for ratio, cost in curves.items():
+        line, = ax.plot(thresholds, cost, label=f"miss = {ratio} false alarms")
+        ax.plot(chosen[ratio], cost[list(thresholds).index(chosen[ratio])], "o", color=line.get_color())
+    ax.set_yscale("log")
+    ax.set_xlabel("Threshold on P(defective)")
+    ax.set_ylabel("Validation cost (ratio × FN + FP)")
+    ax.legend(fontsize=7)
+    fig.tight_layout()
+    fig.savefig(filepath)
+    plt.close(fig)
+
 def plot_confusion_matrix(cm, filepath):
     labels = ["nondefective", "defective"]
     fig, ax = plt.subplots(figsize=(4, 4))

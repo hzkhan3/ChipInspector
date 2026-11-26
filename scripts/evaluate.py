@@ -15,14 +15,10 @@ from src.models.classifier import load_model
 from src.models.inference import get_device
 from src.utils.visualization import plot_confusion_matrix
 
-def main():
-    cfg = yaml.safe_load(open("config/config.yaml"))
-    test_csv = Path(cfg["data"]["splits_dir"]) / "test.csv"
-    threshold = cfg["model"]["threshold"]
-
-    test_ds = dataset_from_csv(test_csv, get_eval_transforms(cfg["train"]["image_size"]))
-    loader = torch.utils.data.DataLoader(test_ds, batch_size=cfg["train"]["batch_size"])
-
+def predict_split(cfg, csv_path):
+    '''Runs the saved model over a split CSV. Returns (P(defective) per image, true labels)'''
+    ds = dataset_from_csv(csv_path, get_eval_transforms(cfg["train"]["image_size"]))
+    loader = torch.utils.data.DataLoader(ds, batch_size=cfg["train"]["batch_size"])
     device = get_device()
     model = load_model(cfg["model"]["path"], device)
 
@@ -32,6 +28,13 @@ def main():
             probs = torch.softmax(model(images.to(device)), dim=1)[:, 1]
             defect_probs.extend(probs.cpu().tolist())
             y_true.extend(labels.tolist())
+    return defect_probs, y_true
+
+def main():
+    cfg = yaml.safe_load(open("config/config.yaml"))
+    test_csv = Path(cfg["data"]["splits_dir"]) / "test.csv"
+    threshold = cfg["model"]["threshold"]
+    defect_probs, y_true = predict_split(cfg, test_csv)
 
     y_pred = [int(p >= threshold) for p in defect_probs]
     metrics = compute_metrics(y_true, y_pred)

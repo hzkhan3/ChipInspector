@@ -40,7 +40,7 @@ The dataset has no license; images remain the property of their authors.
 | Dataset A | 322 | 97.8% | 98.3% | 95.8% | 0.998 |
 | Dataset B | 205 | 84.9% | 76.8% | 77.9% | 0.866 |
 
-The threshold was tuned on validation to favour recall, because a missed defect costs more than a false alarm. Validation recall was 95.7%.
+The threshold minimises `ratio × FN + FP` on validation (`scripts/tune_threshold.py`): 0.2 is optimal when a missed defect costs 1–5 false alarms. If misses cost more, use a lower threshold from that script (e.g. 0.14 for 10×: test recall 91.9%, precision 79.2%). Validation recall was 95.7%.
 Accuracy's 95% confidence interval is about ±2.2%.
 Reproduce: `python -m scripts.evaluate && python -m scripts.error_analysis`.
 
