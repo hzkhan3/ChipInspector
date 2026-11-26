@@ -19,6 +19,15 @@ class ChipClassifier(torch.nn.Module):
     def forward(self, x):
         return self.model(x)
 
+def focal_loss(logits, labels, gamma=2.0):
+    '''
+    Cross-entropy scaled by (1 - p_true)^gamma: easy, confident examples count less,
+    so training focuses on the hard ones (e.g. Dataset B's small defects). gamma=0 is plain cross-entropy
+    '''
+    ce = torch.nn.functional.cross_entropy(logits, labels, reduction="none")
+    p_true = torch.exp(-ce)
+    return ((1 - p_true) ** gamma * ce).mean()
+
 def train_one_epoch(model, dataloader, criterion, optimizer, device):
     model.train()
 

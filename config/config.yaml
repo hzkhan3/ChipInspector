@@ -12,6 +12,8 @@ train:
   seed: 42    # torch seed: new head init, shuffling, augmentation (data.seed fixes the split)
   lr: 0.0001
   lr_schedule: none   # "none" = constant lr (v1.1); "cosine" = decay to 0 over the epochs (tried: smoother, not better, see README)
+  loss: cross_entropy   # or "focal" (focal_gamma below)
+  focal_gamma: 2.0
 
 model:
   path: models/best_model.pt

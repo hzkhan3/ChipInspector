@@ -3,13 +3,14 @@ Fine-tunes a pretrained ResNet18 on the train split and keeps the best model (lo
 Run: python -m scripts.train
 '''
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 import torch
 import yaml
 
 from src.data.dataset import dataset_from_csv
 from src.data.preprocessing import get_train_transforms, get_eval_transforms
-from src.models.classifier import ChipClassifier, train_one_epoch, validate_one_epoch, save_model
+from src.models.classifier import ChipClassifier, focal_loss, train_one_epoch, validate_one_epoch, save_model
 from src.models.inference import get_device
 from src.inspection.reporting import save_run
 from scripts.download_model import sha256
@@ -29,6 +30,9 @@ def main():
     device = get_device()
     model = ChipClassifier(pretrained=True)
     criterion = torch.nn.CrossEntropyLoss()
+    train_criterion = criterion
+    if train_cfg["loss"] == "focal":
+        train_criterion = partial(focal_loss, gamma=train_cfg["focal_gamma"])
     optimizer = torch.optim.Adam(model.parameters(), lr=train_cfg["lr"])
     scheduler = None
     if train_cfg["lr_schedule"] == "cosine":  # big steps early, small steps late, so val loss settles
@@ -39,8 +43,8 @@ def main():
     history = []
 
     for epoch in range(1, train_cfg["epochs"] + 1):
-        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
-        val_loss, val_acc = validate_one_epoch(model, val_loader, criterion, device)
+        train_loss, train_acc = train_one_epoch(model, train_loader, train_criterion, optimizer, device)
+        val_loss, val_acc = validate_one_epoch(model, val_loader, criterion, device)  # always cross-entropy, so runs compare
         history.append({"epoch": epoch, "lr": optimizer.param_groups[0]["lr"], "train_loss": train_loss,
                         "train_acc": train_acc, "val_loss": val_loss, "val_acc": val_acc})
         if scheduler:

@@ -131,6 +131,19 @@ The noisy validation loss suggested decaying the learning rate (`train.lr_schedu
 
 Cosine made training smoother and lowered validation loss a little, but mean validation AUC was identical (0.978), and changing the seed moved the results more than changing the schedule. So v1.1 stays, and the test set was never used for this comparison. The option remains in the config.
 
+### Experiment: focal loss (not adopted)
+
+[Focal loss](https://arxiv.org/abs/1708.02002) (`train.loss: focal`, γ = 2) down-weights easy examples so training focuses on hard ones, such as Dataset B's small defects. Same setup: two seeds, validation only, checkpoint chosen by cross-entropy so runs compare. "Cost" is `3 × misses + false alarms` at each run's best validation threshold (the 2–5 policy used for v1.1).
+
+| Loss | Seed | Val ROC-AUC | Dataset B val AUC | Val misses / false alarms | Cost |
+|---|---|---|---|---|---|
+| cross-entropy (v1.1) | 42 | 0.973 | 0.880 | 16 / 31 | 79 |
+| cross-entropy | 7 | 0.983 | 0.919 | 17 / 16 | 67 |
+| focal | 42 | 0.972 | 0.914 | 11 / 43 | 76 |
+| focal | 7 | 0.977 | 0.906 | 18 / 23 | 77 |
+
+Focal loss helped Dataset B for one seed and hurt it for the other. Averaged over both seeds, overall AUC (0.975 vs 0.978) and cost (76.5 vs 73) were slightly worse. Reweighting the loss doesn't fix defects the network can't resolve at 224 px, which again points to a detector.
+
 ## Reproduce from scratch
 
 ### Get the data
