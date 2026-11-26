@@ -9,7 +9,9 @@ train:
   image_size: 224
   batch_size: 32
   epochs: 10
+  seed: 42    # torch seed: new head init, shuffling, augmentation (data.seed fixes the split)
   lr: 0.0001
+  lr_schedule: none   # "none" = constant lr (v1.1); "cosine" = decay to 0 over the epochs (tried: smoother, not better, see README)
 
 model:
   path: models/best_model.pt

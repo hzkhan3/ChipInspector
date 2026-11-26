@@ -118,6 +118,19 @@ image ─► OpenCV die crop ─► resize 224 / normalize ─► ResNet18 ─�
 
 Validation loss is noisy (spikes at epochs 5 and 9) while training loss keeps falling, so keeping the lowest-validation-loss checkpoint (epoch 7 for v1.1) matters.
 
+### Experiment: cosine learning-rate schedule (not adopted)
+
+The noisy validation loss suggested decaying the learning rate (`train.lr_schedule: cosine`). To tell a real gain from luck, I trained each schedule with two training seeds (same split) and compared them on **validation only**:
+
+| Schedule | Seed | Best val loss | Val accuracy | Val ROC-AUC | Dataset B val AUC | Val-loss std, epochs 6–10 |
+|---|---|---|---|---|---|---|
+| constant (v1.1) | 42 | 0.195 | 91.5% | 0.973 | 0.880 | 0.037 |
+| cosine | 42 | 0.179 | 92.6% | 0.975 | 0.911 | 0.028 |
+| constant | 7 | 0.160 | 94.3% | 0.983 | 0.919 | 0.038 |
+| cosine | 7 | 0.155 | 94.1% | 0.981 | 0.902 | 0.020 |
+
+Cosine made training smoother and lowered validation loss a little, but mean validation AUC was identical (0.978), and changing the seed moved the results more than changing the schedule. So v1.1 stays, and the test set was never used for this comparison. The option remains in the config.
+
 ## Reproduce from scratch
 
 ### Get the data

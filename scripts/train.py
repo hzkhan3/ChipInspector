@@ -18,7 +18,7 @@ def main():
     cfg = yaml.safe_load(open("config/config.yaml"))
     train_cfg = cfg["train"]
     splits_dir = Path(cfg["data"]["splits_dir"])
-    torch.manual_seed(cfg["data"]["seed"])
+    torch.manual_seed(train_cfg["seed"])
 
     train_ds = dataset_from_csv(splits_dir / "train.csv", get_train_transforms(train_cfg["image_size"]))
     val_ds = dataset_from_csv(splits_dir / "val.csv", get_eval_transforms(train_cfg["image_size"]))
@@ -30,6 +30,9 @@ def main():
     model = ChipClassifier(pretrained=True)
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=train_cfg["lr"])
+    scheduler = None
+    if train_cfg["lr_schedule"] == "cosine":  # big steps early, small steps late, so val loss settles
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=train_cfg["epochs"])
 
     print(f"Training on {device} | train={len(train_ds)} val={len(val_ds)}")
     best_val_loss = float("inf")
@@ -38,8 +41,10 @@ def main():
     for epoch in range(1, train_cfg["epochs"] + 1):
         train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_acc = validate_one_epoch(model, val_loader, criterion, device)
-        history.append({"epoch": epoch, "train_loss": train_loss, "train_acc": train_acc,
-                        "val_loss": val_loss, "val_acc": val_acc})
+        history.append({"epoch": epoch, "lr": optimizer.param_groups[0]["lr"], "train_loss": train_loss,
+                        "train_acc": train_acc, "val_loss": val_loss, "val_acc": val_acc})
+        if scheduler:
+            scheduler.step()
 
         print(f"Epoch {epoch}: train loss {train_loss:.4f} acc {train_acc:.3f} | "
               f"val loss {val_loss:.4f} acc {val_acc:.3f}")
