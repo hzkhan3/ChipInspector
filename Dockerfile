@@ -12,7 +12,12 @@ RUN python -m scripts.download_model
 
 COPY src/ src/
 COPY demo_samples/ demo_samples/
+COPY assets/test_metrics.json assets/
 COPY app.py .
+
+# Run as a non-root user with UID 1000, like Hugging Face Spaces does
+RUN useradd -m -u 1000 user
+USER user
 
 EXPOSE 8000
 # One worker keeps a single model in memory; threads handle concurrent requests

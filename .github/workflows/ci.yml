@@ -62,7 +62,28 @@ jobs:
           for f in *.json; do grep -q '"label"' $f; done  # every request answered
           grep -q '"label":"defective"' defective_A_crack.json
           grep -q '"label":"nondefective"' good_B_1.json
-          curl -sf "http://127.0.0.1:8000/?sample=defective_A_crack.jpg" | grep -q DEFECTIVE
+          curl -sf "http://127.0.0.1:8000/?sample=defective_A_crack.jpg" > page.html
+          grep -q DEFECTIVE page.html
+          grep -q "Performance on held-out test set" page.html  # metrics card ships in the image
       - name: Container logs
         if: always()
         run: docker logs app
+
+  # Deploys the demo to a Hugging Face Space after all checks pass.
+  # Skipped until the repo has an HF_SPACE variable (e.g. user/chipinspector) and an HF_TOKEN secret.
+  deploy-space:
+    needs: [lint, test, docker]
+    if: github.event_name == 'push' && vars.HF_SPACE != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Spaces config to README (deployed copy only)
+        run: |
+          printf -- '---\ntitle: ChipInspector\nemoji: 🔍\ncolorFrom: gray\ncolorTo: blue\nsdk: docker\napp_port: 8000\n---\n\n' > header.md
+          cat header.md README.md > README.tmp && mv README.tmp README.md && rm header.md
+      - uses: huggingface/hub-sync@v0.3.0
+        with:
+          github_repo_id: ${{ github.repository }}
+          huggingface_repo_id: ${{ vars.HF_SPACE }}
+          hf_token: ${{ secrets.HF_TOKEN }}
+          space_sdk: docker

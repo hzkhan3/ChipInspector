@@ -106,7 +106,7 @@ The path is set by `data.raw_dir` in `config/config.yaml`. Only the real images 
 python -m scripts.explore_dataset            # counts per dataset and class (expect 3,511 images)
 python -m scripts.split_dataset              # 70/15/15 stratified split -> data/splits/
 python -m scripts.train                      # fine-tune ResNet18 -> models/best_model.pt (needs internet once for ImageNet weights)
-python -m scripts.evaluate                   # test metrics -> outputs/reports/
+python -m scripts.evaluate                   # test metrics -> assets/test_metrics.json, predictions -> outputs/
 python -m scripts.error_analysis             # per-dataset metrics, missed defects, PR curve
 python -m scripts.inspect_image img.jpg      # classify one image -> outputs/annotated/ + JSON report
 ```

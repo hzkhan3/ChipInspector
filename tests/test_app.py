@@ -75,3 +75,6 @@ def test_api_oversized_upload_is_json_413(client, monkeypatch):
 
 def test_healthz(client):
     assert client.get("/healthz").get_json() == {"status": "ok"}
+
+def test_page_shows_test_metrics(client):
+    assert b"Performance on held-out test set" in client.get("/").data

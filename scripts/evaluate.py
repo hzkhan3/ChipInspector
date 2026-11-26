@@ -44,9 +44,9 @@ def main():
     Path("outputs/predictions").mkdir(parents=True, exist_ok=True)
     df.to_csv("outputs/predictions/test_predictions.csv", index=False)
 
-    save_json(metrics, "outputs/reports/test_metrics.json")
+    save_json(metrics, "assets/test_metrics.json")  # tracked, so the app shows it in Docker/Spaces too
     plot_confusion_matrix(metrics["confusion_matrix"], "outputs/reports/confusion_matrix.png")
-    print("Saved predictions and reports to outputs/")
+    print("Saved predictions to outputs/ and metrics to assets/test_metrics.json")
 
 if __name__ == "__main__":
     main()

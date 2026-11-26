@@ -22,7 +22,7 @@ predictor = None  # loaded on first use, so importing app (e.g. in tests) needs 
 load_lock = threading.Lock()
 
 SAMPLES_DIR = Path("demo_samples")
-METRICS_PATH = Path("outputs/reports/test_metrics.json")
+METRICS_PATH = Path("assets/test_metrics.json")  # tracked, so Docker/Spaces show it too
 metrics = json.load(open(METRICS_PATH)) if METRICS_PATH.exists() else None
 
 app = Flask(__name__)
