@@ -15,6 +15,11 @@ train:
   loss: cross_entropy   # or "focal" (focal_gamma below)
   focal_gamma: 2.0
 
+detector:   # Faster R-CNN defect detector (experiment, src/models/detector.py)
+  path: models/detector.pt
+  min_size: 512   # short side after upscaling: Dataset B ~260 px -> 512, so a 7 px defect becomes ~14 px
+  anchor_sizes: [16, 32, 64, 128, 256]   # one per FPN level; COCO's default starts at 32
+
 model:
   path: models/best_model.pt
   # Pretrained weights for the demo (python -m scripts.download_model)
