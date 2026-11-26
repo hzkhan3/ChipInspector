@@ -4,6 +4,7 @@ Run: python app.py   then open http://127.0.0.1:8000
 '''
 import base64
 import json
+import threading
 import time
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from src.models.inference import Predictor
 
 cfg = yaml.safe_load(open("config/config.yaml"))
 predictor = None  # loaded on first use, so importing app (e.g. in tests) needs no weights
+load_lock = threading.Lock()
 
 SAMPLES_DIR = Path("demo_samples")
 METRICS_PATH = Path("outputs/reports/test_metrics.json")
@@ -28,8 +30,9 @@ app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # bigger uploads get a 413
 
 def get_predictor():
     global predictor
-    if predictor is None:
-        predictor = Predictor(cfg["model"]["path"], cfg["train"]["image_size"], cfg["model"]["threshold"])
+    with load_lock:  # gunicorn threads: the first requests mustn't all load the model at once
+        if predictor is None:
+            predictor = Predictor(cfg["model"]["path"], cfg["train"]["image_size"], cfg["model"]["threshold"])
     return predictor
 
 def to_data_url(image_bgr):

@@ -42,3 +42,27 @@ jobs:
           pip install -r requirements-dev.txt --extra-index-url https://download.pytorch.org/whl/cpu
       - name: Run tests
         run: python -m pytest -v
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t chipinspector .
+      - name: Smoke test
+        run: |
+          docker run -d -p 8000:8000 --name app chipinspector
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8000/healthz && break; sleep 1; done
+          # Concurrent first requests on a cold server: model must load once, workers must not crash
+          for f in defective_A_crack good_B_1 defective_B_ink good_A_wide; do
+            curl -sf -F "file=@demo_samples/$f.jpg" http://127.0.0.1:8000/api/predict > $f.json &
+          done
+          wait
+          cat *.json
+          for f in *.json; do grep -q '"label"' $f; done  # every request answered
+          grep -q '"label":"defective"' defective_A_crack.json
+          grep -q '"label":"nondefective"' good_B_1.json
+          curl -sf "http://127.0.0.1:8000/?sample=defective_A_crack.jpg" | grep -q DEFECTIVE
+      - name: Container logs
+        if: always()
+        run: docker logs app

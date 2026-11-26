@@ -63,6 +63,15 @@ curl -F "file=@demo_samples/defective_A_crack.jpg" http://127.0.0.1:8000/api/pre
 
 `die_box` is the OpenCV die crop as `[x0, y0, x1, y1]` in pixels. Bad input returns `{"error": ...}` with status 400 (not an image) or 413 (over 10 MB). `GET /healthz` returns `{"status": "ok"}`.
 
+### Docker
+
+```bash
+docker build -t chipinspector .            # CPU-only torch; downloads and verifies the v1.0 weights
+docker run -p 8000:8000 chipinspector      # gunicorn on http://127.0.0.1:8000 (web page + API)
+```
+
+CI builds the image and smoke-tests the running container on every push.
+
 ## How it works
 
 ```

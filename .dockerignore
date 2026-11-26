@@ -1,0 +1,11 @@
+.git
+.venv
+data
+models
+outputs
+notebooks
+tests
+docs
+.claude
+*.md
+**/__pycache__

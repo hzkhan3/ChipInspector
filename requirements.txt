@@ -1,5 +1,6 @@
 # Runtime dependencies (train, evaluate, CLI, demo app). Python 3.10+.
 Flask==3.1.3
+gunicorn==26.2.0
 matplotlib==3.10.9
 numpy==2.2.6
 opencv-python-headless==5.1.0.95
