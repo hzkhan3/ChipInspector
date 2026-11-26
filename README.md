@@ -8,7 +8,7 @@ Binary classifier for semiconductor chip die images (defective vs. non-defective
 OpenCV first crops each image to the die (threshold + morphology + contours), then a fine-tuned ResNet18 classifies the crop.
 A small Flask app runs the whole pipeline offline.
 
-![ChipInspector demo: a cracked die flagged as defective, with the OpenCV die crop in blue and the hand-labelled crack in yellow](assets/demo.png)
+![ChipInspector demo: cracked and ink-marked dies flagged as defective, good dies passing, with the OpenCV die crop in blue and hand-labelled defects in yellow](assets/demo.gif)
 
 ## Results (held-out test set, 527 images)
 

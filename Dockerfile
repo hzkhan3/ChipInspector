@@ -15,7 +15,7 @@ COPY demo_samples/ demo_samples/
 COPY assets/test_metrics.json assets/
 COPY app.py .
 
-# Run as a non-root user with UID 1000, like Hugging Face Spaces does
+# Don't run the server as root
 RUN useradd -m -u 1000 user
 USER user
 
