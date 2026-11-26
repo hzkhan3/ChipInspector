@@ -82,7 +82,7 @@ PAGE = """
   .upload { display: inline-block; background: #1d2330; color: white; padding: 10px 18px; border-radius: 8px; cursor: pointer; }
   .upload input { display: none; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
-  .grid a { text-decoration: none; color: inherit; font-size: 12px; }
+  .grid a { text-decoration: none; color: inherit; font-size: 12px; overflow-wrap: anywhere; }
   .grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; border: 2px solid transparent; }
   .grid a:hover img { border-color: #1d2330; }
   .stats { display: flex; gap: 28px; }
