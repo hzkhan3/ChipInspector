@@ -246,3 +246,4 @@ CLAUDE.md
 docs/
 *.md
 !README.md
+!MODEL_CARD.md
