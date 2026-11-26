@@ -76,9 +76,9 @@ def index():
         return render()
 
     start = time.perf_counter()
-    result, annotated = analyze(get_predictor(), image, label_path)
+    result, annotated, gradcam = analyze(get_predictor(), image, label_path)
     ms = (time.perf_counter() - start) * 1000
-    return render(result=result, ms=ms, name=name, image=to_data_url(annotated))
+    return render(result=result, ms=ms, name=name, image=to_data_url(annotated), gradcam=to_data_url(gradcam))
 
 @app.post("/api/predict")
 def api_predict():
@@ -121,8 +121,10 @@ PAGE = """
   h1 { margin: 0; font-size: 26px; }
   .sub { color: #667085; margin: 4px 0 24px; }
   .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px #0001; margin-bottom: 20px; }
-  .result { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; }
-  .result img { width: 380px; max-width: 100%; border-radius: 8px; }
+  .result { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .result figure { margin: 0; text-align: center; }
+  .result img { width: 270px; max-width: 100%; border-radius: 8px; }
+  .result > div { flex: 1; min-width: 240px; }
   .defective { color: #d92d20; }
   .nondefective { color: #079455; }
   .error { color: #d92d20; font-weight: 600; }
@@ -150,7 +152,8 @@ PAGE = """
 
   {% if result %}
   <div class="card result {{ result.label }}">
-    <img src="{{ image }}" alt="inspected chip">
+    <figure><img src="{{ image }}" alt="inspected chip"><figcaption class="muted">Prediction</figcaption></figure>
+    <figure><img src="{{ gradcam }}" alt="Grad-CAM heatmap"><figcaption class="muted">Grad-CAM: where the model looked</figcaption></figure>
     <div>
       <div class="muted">{{ name }}</div>
       <div class="verdict">{{ "DEFECTIVE" if result.label == "defective" else "PASS" }}</div>
@@ -160,6 +163,7 @@ PAGE = """
       <div class="muted">Processing time: {{ "%.0f"|format(ms) }} ms</div>
       <p class="muted">
         <span class="key" style="background:#00a0e6"></span>Die region the model sees (OpenCV crop)<br>
+        <span class="key" style="background:#e03c31"></span>Grad-CAM: red = evidence for "defective", scaled by its probability<br>
         {% if result.labelled_defects %}
         <span class="key" style="background:#ffd700"></span>Hand-labelled defect: {{ result.labelled_defects|join(", ") }}
         {% endif %}

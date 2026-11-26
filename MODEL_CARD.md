@@ -50,5 +50,6 @@ Reproduce: `python -m scripts.evaluate && python -m scripts.error_analysis`.
 - **Narrow data:** two sources and one imaging setup each. Expect worse results on new lines, cameras or lighting. Watch for data drift.
 - **Confidence is not calibrated.** The demo often shows ~100%; read it as a ranking, not a probability.
 - **No location or defect type.** The yellow boxes in the demo are hand labels, not predictions.
+- **Grad-CAM is coarse** (7×7). Its peak lands within half a cell of the labelled defect on 91.5% of Dataset A defects but only 53.6% of Dataset B's, and on 11.1% of missed defects (`scripts/gradcam_check.py`). Treat it as a rough explanation, not a localizer.
 - **Crop fallback:** if no die is found (e.g. `NO_DIE` images), the full image is classified.
 - **Split order:** the file listing isn't sorted, so re-running the split on another OS may produce a slightly different split.

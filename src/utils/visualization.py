@@ -32,6 +32,21 @@ def annotate_image(image, result, die_box=None, label_boxes=None):
     cv2.putText(img, text, (6, 16), FONT, 0.5, WHITE, 1, cv2.LINE_AA)
     return img
 
+def overlay_heatmap(image, heatmap, die_box, label_boxes=None):
+    '''
+    Blends a Grad-CAM heatmap (computed on the die crop) back onto the die box, then outlines the
+    labelled defects so you can check whether the model looked at them. Returns BGR.
+    '''
+    img = cv2.cvtColor(np.array(image.convert("RGB")), cv2.COLOR_RGB2BGR)
+    x0, y0, x1, y1 = die_box
+    heat = cv2.resize(heatmap, (x1 - x0, y1 - y0))  # undo the 224x224 squash of the crop
+    color = cv2.applyColorMap(np.uint8(255 * heat), cv2.COLORMAP_JET)
+    img[y0:y1, x0:x1] = cv2.addWeighted(img[y0:y1, x0:x1], 0.55, color, 0.45, 0)
+
+    for _, (bx0, by0, bx1, by1) in label_boxes or []:
+        cv2.rectangle(img, (bx0, by0), (bx1, by1), YELLOW, 2)
+    return img
+
 def plot_confusion_matrix(cm, filepath):
     labels = ["nondefective", "defective"]
     fig, ax = plt.subplots(figsize=(4, 4))

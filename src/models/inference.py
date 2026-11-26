@@ -2,6 +2,7 @@ import torch
 
 from src.data.preprocessing import get_eval_transforms
 from src.models.classifier import load_model
+from src.models.gradcam import grad_cam
 
 CLASS_NAMES = ["nondefective", "defective"]
 
@@ -33,3 +34,8 @@ class Predictor:
         confidence = defect_prob if label == "defective" else 1 - defect_prob
 
         return {"label": label, "confidence": confidence, "defect_probability": defect_prob}
+
+    def heatmap(self, image):
+        '''Grad-CAM for "defective" over the 224x224 die crop the model sees'''
+        x = self.transform(image.convert("RGB")).unsqueeze(0).to(self.device)
+        return grad_cam(self.model, x)

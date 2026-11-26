@@ -8,7 +8,7 @@ Binary classifier for semiconductor chip die images (defective vs. non-defective
 OpenCV first crops each image to the die (threshold + morphology + contours), then a fine-tuned ResNet18 classifies the crop.
 A small Flask app runs the whole pipeline offline.
 
-![ChipInspector demo: cracked and ink-marked dies flagged as defective, good dies passing, with the OpenCV die crop in blue and hand-labelled defects in yellow](assets/demo.gif)
+![ChipInspector demo: defective and good dies with the OpenCV die crop in blue, hand-labelled defects in yellow, and a Grad-CAM heatmap of where the model looked](assets/demo.gif)
 
 ## Results (held-out test set, 527 images)
 
@@ -36,7 +36,23 @@ With 527 test images, the 95% confidence interval on accuracy is about ±2.2%.
 - **Things that did not fix it:** training at 320 px instead of 224 and the die crop both left Dataset B's AUC about where it was (0.865 → 0.866). This is a localization problem, so the next step is an object detector trained on the defect boxes.
 - **Shortcut check:** in Dataset A, defective and good chips were mostly photographed at different zoom levels, so a model could learn the zoom instead of the defect. A model trained without the crop still scored 96–97% on images framed like the other class, so it wasn't relying on zoom much. The die crop removes the signal entirely: every image becomes "die fills the frame". (`good_A_closeup.jpg` in the demo is a good chip at the "defective" zoom, and it passes.)
 
-Reproduce these numbers with `python -m scripts.evaluate && python -m scripts.error_analysis`. Intended use and limitations are in the [model card](MODEL_CARD.md).
+## Explainability (Grad-CAM)
+
+Next to every prediction, the app and CLI show a [Grad-CAM](https://arxiv.org/abs/1610.02391) heatmap of where the model looked. It comes from ResNet18's last convolutional block, is mapped back onto the die crop, and is scaled by P(defective), so a confident pass shows no hotspot.
+
+To check that the heatmaps are meaningful, `scripts/gradcam_check.py` plays the "pointing game": on each defective test image, does the heatmap's hottest point land on a hand-labelled defect box?
+
+| Defective test images | Peak inside a labelled box | Peak within half a heatmap cell |
+|---|---|---|
+| Dataset A (117) | 61.5% | 91.5% |
+| Dataset B (69) | 4.3% | 53.6% |
+| Defects the model caught (168) | 44.6% | 84.5% |
+| Defects the model missed (18) | 0.0% | 11.1% |
+
+Grad-CAM on ResNet18 is a 7×7 grid, so one cell covers ~25 px of the die. That's why the tolerance column matters, and why Dataset B's 5–9 px slivers are rarely hit exactly.
+The last row is the most telling: when the model misses a defect, it wasn't looking at it. That supports the error analysis above: the classifier doesn't localize small defects, and a detector would.
+
+Reproduce these numbers with `python -m scripts.evaluate && python -m scripts.error_analysis && python -m scripts.gradcam_check`. Intended use and limitations are in the [model card](MODEL_CARD.md).
 
 ## Quick start: run the demo
 
@@ -108,7 +124,8 @@ python -m scripts.split_dataset              # 70/15/15 stratified split -> data
 python -m scripts.train                      # fine-tune ResNet18 -> models/best_model.pt (needs internet once for ImageNet weights)
 python -m scripts.evaluate                   # test metrics -> assets/test_metrics.json, predictions -> outputs/
 python -m scripts.error_analysis             # per-dataset metrics, missed defects, PR curve
-python -m scripts.inspect_image img.jpg      # classify one image -> outputs/annotated/ + JSON report
+python -m scripts.gradcam_check              # does the Grad-CAM peak land on the labelled defect?
+python -m scripts.inspect_image img.jpg      # classify one image -> outputs/annotated/ (+ _gradcam.jpg) + JSON report
 ```
 
 All settings (split sizes, seed, image size, learning rate, threshold) live in `config/config.yaml`.
@@ -128,9 +145,9 @@ CI runs lint and tests on Python 3.10 and 3.12 for every push and pull request.
 ```
 app.py                 Flask demo + JSON API (offline)
 config/config.yaml     all settings
-scripts/               entry points: explore, split, train, evaluate, error_analysis, inspect_image, download_model
+scripts/               entry points: explore, split, train, evaluate, error_analysis, gradcam_check, inspect_image, download_model
 src/data/              dataset, label parsing, OpenCV die crop + transforms
-src/models/            ResNet18 classifier, training loop, Predictor
+src/models/            ResNet18 classifier, training loop, Predictor, Grad-CAM
 src/inspection/        end-to-end analyze/inspect + JSON reports
 src/evaluation/        metrics
 src/utils/             OpenCV drawing, confusion-matrix plot
