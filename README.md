@@ -14,7 +14,9 @@ A small Flask app runs the whole pipeline offline.
 
 | Accuracy | Recall | Precision | F1 |
 |---|---|---|---|
-| 92.8% | 90.3% | 89.4% | 0.898 |
+| 91.7% | 95.2% | 83.5% | 0.889 |
+
+These are for model v1.1, trained on a reproducible split (sorted file lists, seed 42). v1.0 used an OS-dependent file order, so its test set (92.8% accuracy, 90.3% recall at threshold 0.2) isn't directly comparable. Ranking quality is the same: test ROC-AUC is 0.973 for both.
 
 ### Choosing the threshold
 
@@ -22,32 +24,33 @@ The model outputs P(defective). The threshold that turns this into a verdict dep
 
 | A missed defect costs | Threshold | Test misses | Test false alarms | Test recall | Test precision |
 |---|---|---|---|---|---|
-| 1–5 false alarms | **0.20** (used) | 18 | 20 | 90.3% | 89.4% |
-| 10 false alarms | 0.14 | 15 | 45 | 91.9% | 79.2% |
-| 20 false alarms | 0.09 | 8 | 96 | 95.7% | 65.0% |
-| 50 false alarms | 0.07 | 2 | 127 | 98.9% | 59.2% |
+| 1 false alarm | 0.83 | 26 | 7 | 86.0% | 95.8% |
+| 2–5 false alarms | **0.32** (used) | 9 | 35 | 95.2% | 83.5% |
+| 10–20 false alarms | 0.09 | 5 | 116 | 97.3% | 60.9% |
+| 50 false alarms | 0.03 | 3 | 165 | 98.4% | 52.6% |
 
 <img src="assets/cost_curves.png" width="380" alt="Validation cost versus threshold for each cost ratio, with the chosen threshold marked">
 
-0.2 is cost-optimal as long as a miss costs up to about 5 false alarms. Catching more defects quickly gets expensive: going from 18 to 8 misses costs 76 more false alarms. That's another sign the remaining misses (mostly Dataset B's tiny defects) need a better model rather than a lower threshold.
-Validation recall was 95.7%, and test recall came in lower at 90.3%. That's expected: a threshold tuned on one set looks slightly better there than on unseen data.
-With 527 test images, the 95% confidence interval on accuracy is about ±2.2%.
+0.32 is cost-optimal when a miss costs 2–5 false alarms. Catching more defects quickly gets expensive: going from 9 to 5 misses costs 81 more false alarms. That's another sign the remaining misses need a better model rather than a lower threshold.
+Validation recall at 0.32 was 91.4% and test recall 95.2%. With ~186 defects per split, a handful of images moves recall by several points.
+With 527 test images, the 95% confidence interval on accuracy is about ±2.4%.
 
 ## Error analysis
 
 | Test set | Images | Accuracy | Recall | Precision | ROC-AUC |
 |---|---|---|---|---|---|
-| Dataset A | 322 | 97.8% | 98.3% | 95.8% | 0.998 |
-| Dataset B | 205 | 84.9% | 76.8% | 77.9% | 0.866 |
+| Dataset A | 322 | 96.9% | 97.4% | 94.2% | 0.987 |
+| Dataset B | 205 | 83.4% | 91.3% | 69.2% | 0.918 |
 
 <p>
-  <img src="assets/pr_curve.png" width="420" alt="Precision-recall curves: Dataset A near perfect, Dataset B drops off after about 75% recall">
-  <img src="assets/confusion_matrix.png" width="300" alt="Confusion matrix: 321 TN, 20 FP, 18 FN, 168 TP">
+  <img src="assets/pr_curve.png" width="420" alt="Precision-recall curves: Dataset A near perfect, Dataset B noticeably lower">
+  <img src="assets/confusion_matrix.png" width="300" alt="Confusion matrix: 306 TN, 35 FP, 9 FN, 177 TP">
 </p>
 
-- **Dataset B is the weak spot.** 16 of the 18 missed defects come from Dataset B. Their label boxes show why: in 14 of them the smallest defect is 5–9 px wide, usually a thin broken sliver at the die edge or a small ink mark on a ~258 px image.
-- **Things that did not fix it:** training at 320 px instead of 224 and the die crop both left Dataset B's AUC about where it was (0.865 → 0.866). This is a localization problem, so the next step is an object detector trained on the defect boxes.
-- **Shortcut check:** in Dataset A, defective and good chips were mostly photographed at different zoom levels, so a model could learn the zoom instead of the defect. A model trained without the crop still scored 96–97% on images framed like the other class, so it wasn't relying on zoom much. The die crop removes the signal entirely: every image becomes "die fills the frame". (`good_A_closeup.jpg` in the demo is a good chip at the "defective" zoom, and it passes.)
+- **Dataset B is the weak spot.** It accounts for 6 of the 9 missed defects and 28 of the 35 false alarms. Its label boxes show why it's hard: 4 of those 6 misses are 5–8 px wide (thin broken slivers at the die edge or a small ink mark on a ~258 px image), and the other 2 are small ink marks of 10–11 px.
+- **Size isn't the whole story.** Dataset A's 3 misses are confident (P ≤ 0.01), and one is a 41 px crack.
+- **Things that did not fix it** (earlier experiments on the v1.0 split): training at 320 px instead of 224 and the die crop both left Dataset B's AUC about where it was (0.865 → 0.866). This is a localization problem, so the next step is an object detector trained on the defect boxes.
+- **Shortcut check** (v1.0 split): in Dataset A, defective and good chips were mostly photographed at different zoom levels, so a model could learn the zoom instead of the defect. A model trained without the crop still scored 96–97% on images framed like the other class, so it wasn't relying on zoom much. The die crop removes the signal entirely: every image becomes "die fills the frame". (`good_A_closeup.jpg` in the demo is a good chip at the "defective" zoom, and it passes.)
 
 ## Explainability (Grad-CAM)
 
@@ -57,13 +60,13 @@ To check that the heatmaps are meaningful, `scripts/gradcam_check.py` plays the 
 
 | Defective test images | Peak inside a labelled box | Peak within half a heatmap cell |
 |---|---|---|
-| Dataset A (117) | 61.5% | 91.5% |
-| Dataset B (69) | 4.3% | 53.6% |
-| Defects the model caught (168) | 44.6% | 84.5% |
-| Defects the model missed (18) | 0.0% | 11.1% |
+| Dataset A (117) | 58.1% | 87.2% |
+| Dataset B (69) | 4.3% | 79.7% |
+| Defects the model caught (177) | 39.5% | 88.1% |
+| Defects the model missed (9) | 11.1% | 11.1% |
 
 Grad-CAM on ResNet18 is a 7×7 grid, so one cell covers ~25 px of the die. That's why the tolerance column matters, and why Dataset B's 5–9 px slivers are rarely hit exactly.
-The last row is the most telling: when the model misses a defect, it wasn't looking at it. That supports the error analysis above: the classifier doesn't localize small defects, and a detector would.
+The last row is the most telling: when the model misses a defect, it usually wasn't looking at it (1 of 9). That supports the error analysis above: the classifier doesn't localize small defects, and a detector would.
 
 Reproduce these numbers with `python -m scripts.evaluate && python -m scripts.error_analysis && python -m scripts.gradcam_check && python -m scripts.tune_threshold`. Intended use and limitations are in the [model card](MODEL_CARD.md).
 
@@ -95,7 +98,7 @@ curl -F "file=@demo_samples/defective_A_crack.jpg" http://127.0.0.1:8000/api/pre
 ### Docker
 
 ```bash
-docker build -t chipinspector .            # CPU-only torch; downloads and verifies the v1.0 weights
+docker build -t chipinspector .            # CPU-only torch; downloads and verifies the v1.1 weights
 docker run -p 8000:8000 chipinspector      # gunicorn on http://127.0.0.1:8000 (web page + API)
 ```
 
@@ -104,7 +107,7 @@ CI builds the image and smoke-tests the running container on every push.
 ## How it works
 
 ```
-image ─► OpenCV die crop ─► resize 224 / normalize ─► ResNet18 ─► P(defective) ─► threshold 0.2 ─► verdict + annotated image
+image ─► OpenCV die crop ─► resize 224 / normalize ─► ResNet18 ─► P(defective) ─► threshold 0.32 ─► verdict + annotated image
 ```
 
 1. **Die crop** (`src/data/preprocessing.py`): a threshold set between Otsu and the 99th-percentile brightness, morphological opening to cut off solder bumps, then the largest contour. It makes the die fill the frame and removes a zoom-level shortcut between the classes.

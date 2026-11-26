@@ -1,7 +1,7 @@
 <annotation verified="yes">
 	<folder>image</folder>
-	<filename>58fdfbd3858ba5d617bf621d231cd06f.jpg</filename>
-	<path>/Users/yangfan/Desktop/0017575AFC/defective/image/58fdfbd3858ba5d617bf621d231cd06f.jpg</path>
+	<filename>7aecba64f03904cfd5af2207ce6493ad.jpg</filename>
+	<path>/Users/yangfan/Desktop/0017575AFC/defective/image/7aecba64f03904cfd5af2207ce6493ad.jpg</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +17,22 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>182</xmin>
-			<ymin>87</ymin>
-			<xmax>194</xmax>
-			<ymax>159</ymax>
+			<xmin>114</xmin>
+			<ymin>110</ymin>
+			<xmax>122</xmax>
+			<ymax>118</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>DIE_INK</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>184</xmin>
+			<ymin>78</ymin>
+			<xmax>197</xmax>
+			<ymax>191</ymax>
 		</bndbox>
 	</object>
 </annotation>

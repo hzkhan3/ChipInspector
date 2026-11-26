@@ -14,6 +14,6 @@ train:
 model:
   path: models/best_model.pt
   # Pretrained weights for the demo (python -m scripts.download_model)
-  url: https://github.com/hzkhan3/ChipInspector/releases/download/v1.0/best_model.pt
-  sha256: 0c215726873c003322099d3b02479b0bf0f0158cf7357443e33544315e499432
-  threshold: 0.2   # P(defective) >= this -> "defective". Cost-optimal on val for a miss = 1-5 false alarms (scripts.tune_threshold)
+  url: https://github.com/hzkhan3/ChipInspector/releases/download/v1.1/best_model.pt
+  sha256: c05d3a1cd634d2cd2441d5452b98c0678a642d397781b1fc49a0b73da8bf7f08
+  threshold: 0.32  # P(defective) >= this -> "defective". Cost-optimal on val for a miss = 2-5 false alarms (scripts.tune_threshold)

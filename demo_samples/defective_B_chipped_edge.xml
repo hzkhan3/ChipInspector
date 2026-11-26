@@ -1,7 +1,7 @@
-<annotation verified="yes">
+<annotation>
 	<folder>image</folder>
-	<filename>43287f2694ba20f797dfc1686527cc8a.jpg</filename>
-	<path>/Users/yangfan/Desktop/0017575AFC/defective/image/43287f2694ba20f797dfc1686527cc8a.jpg</path>
+	<filename>9665740c7c6f6d60810ba2fd2a18ce8b.jpg</filename>
+	<path>C:\Users\Skywalker\Desktop\chipdata_beta\K11\defective\image\9665740c7c6f6d60810ba2fd2a18ce8b.jpg</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -18,8 +18,8 @@
 		<difficult>0</difficult>
 		<bndbox>
 			<xmin>181</xmin>
-			<ymin>140</ymin>
-			<xmax>192</xmax>
+			<ymin>167</ymin>
+			<xmax>193</xmax>
 			<ymax>190</ymax>
 		</bndbox>
 	</object>

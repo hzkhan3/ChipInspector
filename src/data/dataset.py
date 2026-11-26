@@ -62,12 +62,12 @@ def get_image_paths_and_labels(raw_dir="data/raw/real"):
         label_dir_defect = root / "defective" / "label"
 
         label_map = {p.stem: p for p in label_dir_defect.glob("*.xml")}
-        img_files_defect = [p for p in img_dir_defect.iterdir() if p.suffix.lower() in img_exts]
+        img_files_defect = sorted(p for p in img_dir_defect.iterdir() if p.suffix.lower() in img_exts)  # sorted: iterdir order varies by OS
         label_files_defect = [label_map[p.stem] for p in img_files_defect]
 
         # Nondefective images + None labels
         img_dir_nondefect = root / "nondefective"
-        img_files_nondefect = [p for p in img_dir_nondefect.iterdir() if p.suffix.lower() in img_exts]
+        img_files_nondefect = sorted(p for p in img_dir_nondefect.iterdir() if p.suffix.lower() in img_exts)
         label_files_nondefect = [None] * len(img_files_nondefect)
 
         # Combine in matching order

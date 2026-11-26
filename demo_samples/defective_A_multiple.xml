@@ -1,13 +1,13 @@
 <annotation>
 	<folder>image</folder>
-	<filename>R12C84X243Y299L121W30.jpg</filename>
-	<path>C:\Users\Skywalker\Desktop\Data_relabel\dataset_unique\defective\image\R12C84X243Y299L121W30.jpg</path>
+	<filename>R6C96X234Y199L146W229.jpg</filename>
+	<path>C:\Users\Skywalker\Desktop\Data_relabel\dataset_unique\defective\image\R6C96X234Y199L146W229.jpg</path>
 	<source>
 		<database>Unknown</database>
 	</source>
 	<size>
 		<width>378</width>
-		<height>370</height>
+		<height>367</height>
 		<depth>1</depth>
 	</size>
 	<segmented>0</segmented>
@@ -17,22 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>130</xmin>
+			<xmin>180</xmin>
 			<ymin>93</ymin>
-			<xmax>303</xmax>
-			<ymax>219</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>DIE_BROKEN</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>185</xmin>
-			<ymin>285</ymin>
-			<xmax>307</xmax>
-			<ymax>314</ymax>
+			<xmax>281</xmax>
+			<ymax>303</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -41,22 +29,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>130</xmin>
-			<ymin>73</ymin>
-			<xmax>156</xmax>
-			<ymax>88</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>DIE_BROKEN</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>158</xmin>
-			<ymin>72</ymin>
-			<xmax>205</xmax>
-			<ymax>83</ymax>
+			<xmin>137</xmin>
+			<ymin>166</ymin>
+			<xmax>166</xmax>
+			<ymax>195</ymax>
 		</bndbox>
 	</object>
 </annotation>

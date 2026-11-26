@@ -1,7 +1,7 @@
 <annotation>
-	<folder>image</folder>
-	<filename>R1C95X156Y196L180W245.jpg</filename>
-	<path>C:\Users\Skywalker\Desktop\Data_relabel\dataset_unique\defective\image\R1C95X156Y196L180W245.jpg</path>
+	<folder>fc</folder>
+	<filename>R4C83X0Y0L0W0.bmp</filename>
+	<path>E:\工作\数据打标\fc\R4C83X0Y0L0W0.bmp</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>79</xmin>
-			<ymin>84</ymin>
-			<xmax>221</xmax>
-			<ymax>261</ymax>
+			<xmin>134</xmin>
+			<ymin>78</ymin>
+			<xmax>194</xmax>
+			<ymax>212</ymax>
 		</bndbox>
 	</object>
 </annotation>
