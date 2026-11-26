@@ -47,3 +47,31 @@ def test_unknown_sample_is_404(client):
 def test_samples_route_serves_only_jpgs(client):
     assert client.get("/samples/good_B_1.jpg").status_code == 200
     assert client.get("/samples/defective_A_crack.xml").status_code == 404
+
+def api_upload(client, data, filename):
+    return client.post("/api/predict", data={"file": (io.BytesIO(data), filename)}, content_type="multipart/form-data")
+
+def test_api_predict_returns_json(client):
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 64), "gray").save(buf, "PNG")
+    r = api_upload(client, buf.getvalue(), "chip.png")
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["label"] in ("defective", "nondefective")
+    assert 0 <= body["defect_probability"] <= 1
+    assert body["die_box"] == [0, 0, 64, 64]  # no die in a flat image -> full-image fallback
+
+def test_api_rejects_missing_and_bad_files(client):
+    assert client.post("/api/predict").status_code == 400
+    r = api_upload(client, b"not an image", "notes.txt")
+    assert r.status_code == 400
+    assert "not an image" in r.get_json()["error"]
+
+def test_api_oversized_upload_is_json_413(client, monkeypatch):
+    monkeypatch.setitem(demo.app.config, "MAX_CONTENT_LENGTH", 1000)
+    r = api_upload(client, b"x" * 2000, "big.jpg")
+    assert r.status_code == 413
+    assert "too large" in r.get_json()["error"]
+
+def test_healthz(client):
+    assert client.get("/healthz").get_json() == {"status": "ok"}

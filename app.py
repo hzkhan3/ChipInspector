@@ -12,6 +12,7 @@ import yaml
 from flask import Flask, abort, request, render_template_string, send_from_directory
 from PIL import Image
 
+from src.data.preprocessing import find_die_box
 from src.inspection.pipeline import analyze
 from src.models.inference import Predictor
 
@@ -39,6 +40,13 @@ def to_data_url(image_bgr):
 def samples():
     return sorted(p.name for p in SAMPLES_DIR.glob("*.jpg"))
 
+def open_upload(file):
+    '''Returns the uploaded file as an RGB image, or None if it isn't a readable image'''
+    try:
+        return Image.open(file.stream).convert("RGB")
+    except OSError:  # PIL raises this for non-images and truncated files
+        return None
+
 def render(error=None, status=200, **result):
     page = render_template_string(
         PAGE, error=error, samples=samples(), metrics=metrics, threshold=cfg["model"]["threshold"], **result
@@ -51,10 +59,8 @@ def index():
 
     if request.method == "POST" and request.files.get("file"):
         file = request.files["file"]
-        name = file.filename
-        try:
-            image = Image.open(file.stream).convert("RGB")
-        except OSError:  # PIL raises this for non-images and truncated files
+        name, image = file.filename, open_upload(file)
+        if image is None:
             return render(f"{name} is not an image we can read", 400)
     elif request.args.get("sample"):
         name = request.args["sample"]
@@ -71,8 +77,27 @@ def index():
     ms = (time.perf_counter() - start) * 1000
     return render(result=result, ms=ms, name=name, image=to_data_url(annotated))
 
+@app.post("/api/predict")
+def api_predict():
+    file = request.files.get("file")
+    if not file:
+        return {"error": "send the image as multipart form field 'file'"}, 400
+    image = open_upload(file)
+    if image is None:
+        return {"error": f"{file.filename} is not an image we can read"}, 400
+
+    result = get_predictor().predict(image)
+    result["die_box"] = list(find_die_box(image))
+    return result
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
 @app.errorhandler(413)
 def too_large(e):
+    if request.path.startswith("/api/"):
+        return {"error": "file too large (max 10 MB)"}, 413
     return render("File too large (max 10 MB)", 413)
 
 @app.route("/samples/<name>")
