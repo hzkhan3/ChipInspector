@@ -91,8 +91,12 @@ def save_model(model, filepath, epoch=None, val_loss=None, val_acc=None):
 
 def load_model(filepath, device="cpu"):
     # pretrained=False: the saved file already holds all the weights, so no download (works offline)
+    if not Path(filepath).exists():
+        raise FileNotFoundError(
+            f"No model at {filepath}. Run 'python -m scripts.download_model' (or train one with 'python -m scripts.train')"
+        )
     model = ChipClassifier(pretrained=False)
-    checkpoint = torch.load(filepath, map_location=device)
+    checkpoint = torch.load(filepath, map_location=device, weights_only=True)
     model.load_state_dict(checkpoint["model_state"])
     model.to(device)
     model.eval()

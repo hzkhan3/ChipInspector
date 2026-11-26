@@ -25,3 +25,8 @@ def test_inspect_image_end_to_end(tmp_path):
     assert result["labelled_defects"] == ["DIE_CRACK"]
     assert (tmp_path / "outputs" / "annotated" / "chip.jpg").exists()
     assert (tmp_path / "outputs" / "reports" / "chip.json").exists()
+
+def test_missing_model_points_to_download_script(tmp_path):
+    import pytest
+    with pytest.raises(FileNotFoundError, match="download_model"):
+        Predictor(tmp_path / "nope.pt", device="cpu")

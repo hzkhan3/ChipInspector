@@ -42,16 +42,15 @@ class ChipDataset(torch.utils.data.Dataset):
 
         return (image_transformed, target)
 
-from pathlib import Path
-
-def get_image_paths_and_labels():
+def get_image_paths_and_labels(raw_dir="data/raw/real"):
     '''
-    Helper function that uses hardcoded directory for the dataset to return the full image paths list and the label paths list
+    Walks the real DatasetA/DatasetB folders under raw_dir and returns the image paths list and the label paths list
     '''
-    roots = [
-        Path("~/ChipInspector/data/raw/real/DatasetA-Real").expanduser(),
-        Path("~/ChipInspector/data/raw/real/DatasetB-Real").expanduser(),
-    ]
+    raw_dir = Path(raw_dir).expanduser()
+    roots = [raw_dir / "DatasetA-Real", raw_dir / "DatasetB-Real"]
+    missing = [r for r in roots if not r.is_dir()]
+    if missing:
+        raise FileNotFoundError(f"Dataset not found at {missing[0]}. See 'Get the data' in README.md")
 
     img_exts = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
     all_images = []

@@ -12,7 +12,7 @@ from src.data.dataset import get_image_paths_and_labels
 def main():
     cfg = yaml.safe_load(open("config/config.yaml"))["data"]
 
-    images, labels = get_image_paths_and_labels()
+    images, labels = get_image_paths_and_labels(cfg["raw_dir"])
     df = pd.DataFrame({
         "image_path": [str(p) for p in images],
         "label_path": [str(p) if p else "" for p in labels],
