@@ -17,6 +17,26 @@ A small Flask app runs the whole pipeline offline.
 | 92.8% | 90.3% | 89.4% | 0.898 |
 
 The decision threshold (0.2) was tuned on the validation set to favour recall, since a missed defect costs more than a false alarm.
+Validation recall was 95.7%, and test recall came in lower at 90.3%. That's expected: a threshold tuned on one set looks slightly better there than on unseen data.
+With 527 test images, the 95% confidence interval on accuracy is about ±2.2%.
+
+## Error analysis
+
+| Test set | Images | Accuracy | Recall | Precision | ROC-AUC |
+|---|---|---|---|---|---|
+| Dataset A | 322 | 97.8% | 98.3% | 95.8% | 0.998 |
+| Dataset B | 205 | 84.9% | 76.8% | 77.9% | 0.866 |
+
+<p>
+  <img src="assets/pr_curve.png" width="420" alt="Precision-recall curves: Dataset A near perfect, Dataset B drops off after about 75% recall">
+  <img src="assets/confusion_matrix.png" width="300" alt="Confusion matrix: 321 TN, 20 FP, 18 FN, 168 TP">
+</p>
+
+- **Dataset B is the weak spot.** 16 of the 18 missed defects come from Dataset B. Their label boxes show why: in 14 of them the smallest defect is 5–9 px wide, usually a thin broken sliver at the die edge or a small ink mark on a ~258 px image.
+- **Things that did not fix it:** training at 320 px instead of 224 and the die crop both left Dataset B's AUC about where it was (0.865 → 0.866). This is a localization problem, so the next step is an object detector trained on the defect boxes.
+- **Shortcut check:** in Dataset A, defective and good chips were mostly photographed at different zoom levels, so a model could learn the zoom instead of the defect. A model trained without the crop still scored 96–97% on images framed like the other class, so it wasn't relying on zoom much. The die crop removes the signal entirely: every image becomes "die fills the frame". (`good_A_closeup.jpg` in the demo is a good chip at the "defective" zoom, and it passes.)
+
+Reproduce these numbers with `python -m scripts.evaluate && python -m scripts.error_analysis`.
 
 ## Quick start: run the demo
 
@@ -65,6 +85,7 @@ python -m scripts.explore_dataset            # counts per dataset and class (exp
 python -m scripts.split_dataset              # 70/15/15 stratified split -> data/splits/
 python -m scripts.train                      # fine-tune ResNet18 -> models/best_model.pt (needs internet once for ImageNet weights)
 python -m scripts.evaluate                   # test metrics -> outputs/reports/
+python -m scripts.error_analysis             # per-dataset metrics, missed defects, PR curve
 python -m scripts.inspect_image img.jpg      # classify one image -> outputs/annotated/ + JSON report
 ```
 
@@ -85,7 +106,7 @@ CI runs lint and tests on Python 3.10 and 3.12 for every push and pull request.
 ```
 app.py                 Flask demo (offline)
 config/config.yaml     all settings
-scripts/               entry points: explore, split, train, evaluate, inspect_image, download_model
+scripts/               entry points: explore, split, train, evaluate, error_analysis, inspect_image, download_model
 src/data/              dataset, label parsing, OpenCV die crop + transforms
 src/models/            ResNet18 classifier, training loop, Predictor
 src/inspection/        end-to-end analyze/inspect + JSON reports

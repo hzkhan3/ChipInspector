@@ -46,3 +46,19 @@ def plot_confusion_matrix(cm, filepath):
     fig.tight_layout()
     fig.savefig(filepath)
     plt.close(fig)
+
+def plot_pr_curves(curves, threshold_points, filepath):
+    '''
+    curves: {name: (precision, recall)}, threshold_points: {name: (precision, recall)} at the chosen threshold
+    '''
+    fig, ax = plt.subplots(figsize=(5, 4))
+    for name, (p, r) in curves.items():
+        line, = ax.plot(r, p, label=name)
+        ax.plot(*threshold_points[name][::-1], "o", color=line.get_color())
+    ax.set_xlabel("Recall (defects caught)")
+    ax.set_ylabel("Precision")
+    ax.set_title("Precision-recall on test set (dot = threshold)")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(filepath)
+    plt.close(fig)
