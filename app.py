@@ -9,53 +9,76 @@ from pathlib import Path
 
 import cv2
 import yaml
-from flask import Flask, request, render_template_string, send_from_directory
+from flask import Flask, abort, request, render_template_string, send_from_directory
 from PIL import Image
 
 from src.inspection.pipeline import analyze
 from src.models.inference import Predictor
 
 cfg = yaml.safe_load(open("config/config.yaml"))
-predictor = Predictor(cfg["model"]["path"], cfg["train"]["image_size"], cfg["model"]["threshold"])
+predictor = None  # loaded on first use, so importing app (e.g. in tests) needs no weights
 
 SAMPLES_DIR = Path("demo_samples")
 METRICS_PATH = Path("outputs/reports/test_metrics.json")
 metrics = json.load(open(METRICS_PATH)) if METRICS_PATH.exists() else None
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # bigger uploads get a 413
+
+def get_predictor():
+    global predictor
+    if predictor is None:
+        predictor = Predictor(cfg["model"]["path"], cfg["train"]["image_size"], cfg["model"]["threshold"])
+    return predictor
 
 def to_data_url(image_bgr):
     '''Encode an OpenCV image so it can be shown directly in the page'''
     ok, buf = cv2.imencode(".jpg", image_bgr)
     return "data:image/jpeg;base64," + base64.b64encode(buf.tobytes()).decode()
 
+def samples():
+    return sorted(p.name for p in SAMPLES_DIR.glob("*.jpg"))
+
+def render(error=None, status=200, **result):
+    page = render_template_string(
+        PAGE, error=error, samples=samples(), metrics=metrics, threshold=cfg["model"]["threshold"], **result
+    )
+    return page, status
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-    image, name, label_path = None, None, None
+    label_path = None
 
     if request.method == "POST" and request.files.get("file"):
         file = request.files["file"]
-        image, name = Image.open(file.stream).convert("RGB"), file.filename
+        name = file.filename
+        try:
+            image = Image.open(file.stream).convert("RGB")
+        except OSError:  # PIL raises this for non-images and truncated files
+            return render(f"{name} is not an image we can read", 400)
     elif request.args.get("sample"):
-        name = Path(request.args["sample"]).name  # .name stops paths like ../../secret
+        name = request.args["sample"]
+        if name not in samples():  # only the bundled samples, so no paths like ../../secret
+            return render(f"No sample called {name}", 404)
         image = Image.open(SAMPLES_DIR / name).convert("RGB")
         xml = (SAMPLES_DIR / name).with_suffix(".xml")  # demo defects ship with their label file
         label_path = xml if xml.exists() else None
+    else:
+        return render()
 
-    result, annotated, ms = None, None, None
-    if image:
-        start = time.perf_counter()
-        result, annotated = analyze(predictor, image, label_path)
-        ms = (time.perf_counter() - start) * 1000
+    start = time.perf_counter()
+    result, annotated = analyze(get_predictor(), image, label_path)
+    ms = (time.perf_counter() - start) * 1000
+    return render(result=result, ms=ms, name=name, image=to_data_url(annotated))
 
-    samples = sorted(p.name for p in SAMPLES_DIR.glob("*.jpg"))
-    return render_template_string(
-        PAGE, result=result, ms=ms, name=name, samples=samples, metrics=metrics,
-        image=to_data_url(annotated) if image else None, threshold=predictor.threshold,
-    )
+@app.errorhandler(413)
+def too_large(e):
+    return render("File too large (max 10 MB)", 413)
 
 @app.route("/samples/<name>")
 def sample(name):
+    if not name.endswith(".jpg"):
+        abort(404)
     return send_from_directory(SAMPLES_DIR, name)
 
 PAGE = """
@@ -74,6 +97,7 @@ PAGE = """
   .result img { width: 380px; max-width: 100%; border-radius: 8px; }
   .defective { color: #d92d20; }
   .nondefective { color: #079455; }
+  .error { color: #d92d20; font-weight: 600; }
   .key { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 4px; }
   .verdict { font-size: 34px; font-weight: 700; letter-spacing: 1px; }
   .bar { height: 10px; background: #eaecf0; border-radius: 5px; width: 280px; overflow: hidden; margin: 6px 0 16px; }
@@ -93,6 +117,8 @@ PAGE = """
 <main>
   <h1>ChipInspector</h1>
   <p class="sub">Classifies chip die images as defective or non-defective &middot; ResNet18 fine-tuned with PyTorch</p>
+
+  {% if error %}<div class="card error">{{ error }}</div>{% endif %}
 
   {% if result %}
   <div class="card result {{ result.label }}">
@@ -145,4 +171,5 @@ PAGE = """
 """
 
 if __name__ == "__main__":
+    get_predictor()  # load now so a missing model fails at startup, not on first click
     app.run(port=8000, debug=False)  # not 5000: macOS AirPlay uses that port
