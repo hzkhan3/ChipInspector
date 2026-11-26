@@ -1,0 +1,17 @@
+[project]
+name = "chipinspector"
+version = "1.0.0"
+description = "Chip die defect classifier: OpenCV die crop + fine-tuned ResNet18, with an offline Flask demo"
+requires-python = ">=3.10"
+license = "MIT"
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+# Pyflakes (unused/undefined names) + pycodestyle errors that signal real bugs, not style churn
+select = ["E4", "E7", "E9", "F"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
